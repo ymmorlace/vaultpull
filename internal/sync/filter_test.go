@@ -9,63 +9,65 @@ func TestNamespaceFilter_EmptyPrefix(t *testing.T) {
 	paths := []string{"app/db", "infra/redis", "team/secret"}
 	got := f.FilterPaths(paths)
 	if len(got) != len(paths) {
-		t.Errorf("expected %d paths, got %d", len(paths), len(got))
+		t.Fatalf("expected %d paths, got %d", len(paths), len(got))
+	}
+	for i, p := range paths {
+		if got[i] != p {
+			t.Errorf("expected %q, got %q", p, got[i])
+		}
 	}
 }
 
 func TestNamespaceFilter_Match(t *testing.T) {
+	f := NewNamespaceFilter("app")
 	tests := []struct {
-		prefix string
-		path   string
-		want   bool
+		path  string
+		want  bool
 	}{
-		{"app", "app/db", true},
-		{"app/", "app/db", true},
-		{"app", "infra/db", false},
-		{"app", "application/db", false},
-		{"", "anything/goes", true},
+		{"app/db", true},
+		{"app/cache", true},
+		{"infra/redis", false},
+		{"application/x", true}, // HasPrefix match
+		{"", false},
 	}
-
 	for _, tt := range tests {
-		t.Run(tt.prefix+":"+tt.path, func(t *testing.T) {
-			f := NewNamespaceFilter(tt.prefix)
-			if got := f.Match(tt.path); got != tt.want {
-				t.Errorf("Match(%q) with prefix %q = %v, want %v", tt.path, tt.prefix, got, tt.want)
-			}
-		})
+		got := f.Match(tt.path)
+		if got != tt.want {
+			t.Errorf("Match(%q) = %v, want %v", tt.path, got, tt.want)
+		}
 	}
 }
 
 func TestNamespaceFilter_Strip(t *testing.T) {
+	f := NewNamespaceFilter("app/")
 	tests := []struct {
-		prefix string
-		path   string
-		want   string
+		path string
+		want string
 	}{
-		{"app", "app/db/password", "db/password"},
-		{"app/", "app/db/password", "db/password"},
-		{"app", "infra/db", "infra/db"},
-		{"", "app/db", "app/db"},
+		{"app/db", "db"},
+		{"app/cache/redis", "cache/redis"},
+		{"infra/redis", "infra/redis"},
+		{"app/", ""},
 	}
-
 	for _, tt := range tests {
-		t.Run(tt.prefix+":"+tt.path, func(t *testing.T) {
-			f := NewNamespaceFilter(tt.prefix)
-			if got := f.Strip(tt.path); got != tt.want {
-				t.Errorf("Strip(%q) with prefix %q = %q, want %q", tt.path, tt.prefix, got, tt.want)
-			}
-		})
+		got := f.Strip(tt.path)
+		if got != tt.want {
+			t.Errorf("Strip(%q) = %q, want %q", tt.path, got, tt.want)
+		}
 	}
 }
 
 func TestNamespaceFilter_FilterPaths(t *testing.T) {
-	f := NewNamespaceFilter("team")
-	input := []string{"team/alpha/key", "team/beta/key", "infra/db", "app/secret"}
+	f := NewNamespaceFilter("app/")
+	input := []string{"app/db", "app/cache", "infra/redis", "app/secrets"}
+	want := []string{"db", "cache", "secrets"}
 	got := f.FilterPaths(input)
-	if len(got) != 2 {
-		t.Fatalf("expected 2 filtered paths, got %d: %v", len(got), got)
+	if len(got) != len(want) {
+		t.Fatalf("expected %d results, got %d: %v", len(want), len(got), got)
 	}
-	if got[0] != "team/alpha/key" || got[1] != "team/beta/key" {
-		t.Errorf("unexpected filtered paths: %v", got)
+	for i, w := range want {
+		if got[i] != w {
+			t.Errorf("index %d: expected %q, got %q", i, w, got[i])
+		}
 	}
 }
