@@ -61,3 +61,18 @@ func (q *QuoteTransformer) Transform(_, value string) (string, error) {
 	}
 	return value, nil
 }
+
+// PrefixTransformer prepends a fixed string to every secret value.
+type PrefixTransformer struct {
+	prefix string
+}
+
+// NewPrefixTransformer creates a new PrefixTransformer that prepends the given prefix.
+func NewPrefixTransformer(prefix string) *PrefixTransformer {
+	return &PrefixTransformer{prefix: prefix}
+}
+
+// Transform prepends the configured prefix to the value.
+func (p *PrefixTransformer) Transform(_, value string) (string, error) {
+	return p.prefix + value, nil
+}
