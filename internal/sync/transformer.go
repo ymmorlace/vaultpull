@@ -76,3 +76,18 @@ func NewPrefixTransformer(prefix string) *PrefixTransformer {
 func (p *PrefixTransformer) Transform(_, value string) (string, error) {
 	return p.prefix + value, nil
 }
+
+// SuffixTransformer appends a fixed string to every secret value.
+type SuffixTransformer struct {
+	suffix string
+}
+
+// NewSuffixTransformer creates a new SuffixTransformer that appends the given suffix.
+func NewSuffixTransformer(suffix string) *SuffixTransformer {
+	return &SuffixTransformer{suffix: suffix}
+}
+
+// Transform appends the configured suffix to the value.
+func (s *SuffixTransformer) Transform(_, value string) (string, error) {
+	return value + s.suffix, nil
+}
