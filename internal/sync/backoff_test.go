@@ -56,6 +56,22 @@ func TestExponentialBackoff_JitterAddsVariance(t *testing.T) {
 	}
 }
 
+func TestExponentialBackoff_JitterRespectsMax(t *testing.T) {
+	b := &ExponentialBackoff{
+		Base:       1 * time.Second,
+		Max:        2 * time.Second,
+		Multiplier: 2.0,
+		Jitter:     true,
+	}
+
+	for i := 0; i < 50; i++ {
+		d := b.Delay(5)
+		if d > b.Max {
+			t.Errorf("attempt %d: jittered delay %v exceeds max %v", i, d, b.Max)
+		}
+	}
+}
+
 func TestExponentialBackoff_DefaultMultiplierFallback(t *testing.T) {
 	b := &ExponentialBackoff{
 		Base:       100 * time.Millisecond,
