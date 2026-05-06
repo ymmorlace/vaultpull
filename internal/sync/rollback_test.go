@@ -70,6 +70,20 @@ func TestRollbackWriter_PropagatesInnerError(t *testing.T) {
 	}
 }
 
+// TestRollbackWriter_PropagatesInnerError_DoesNotRecord verifies that a failed
+// write is not recorded in the rollback log, since there is nothing to undo.
+func TestRollbackWriter_PropagatesInnerError_DoesNotRecord(t *testing.T) {
+	sentinel := errors.New("write failed")
+	ew := &errorWriter{err: sentinel}
+	rw := sync.NewRollbackWriter(ew, nil)
+
+	_ = rw.Write(context.Background(), "KEY", "val")
+
+	if got := len(rw.Entries()); got != 0 {
+		t.Errorf("expected no entries after failed write, got %d", got)
+	}
+}
+
 func TestRollbackWriter_Reset_ClearsLog(t *testing.T) {
 	buf := &captureWriter{}
 	rw := sync.NewRollbackWriter(buf, nil)
