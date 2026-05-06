@@ -12,6 +12,7 @@ import (
 type mockEnvWriter struct {
 	entries []string
 	wantErr error
+	closed  bool
 }
 
 func (m *mockEnvWriter) Write(key, value string) error {
@@ -22,7 +23,10 @@ func (m *mockEnvWriter) Write(key, value string) error {
 	return nil
 }
 
-func (m *mockEnvWriter) Close() error { return nil }
+func (m *mockEnvWriter) Close() error {
+	m.closed = true
+	return nil
+}
 
 func TestTransformingWriter_AppliesTransform(t *testing.T) {
 	inner := &mockEnvWriter{}
@@ -73,5 +77,9 @@ func TestTransformingWriter_Close(t *testing.T) {
 	tw := sync.NewTransformingWriter(inner, sync.NewTrimSpaceTransformer())
 	if err := tw.Close(); err != nil {
 		t.Errorf("unexpected close error: %v", err)
+	}
+	// Verify that Close is delegated to the inner writer.
+	if !inner.closed {
+		t.Errorf("expected inner writer to be closed")
 	}
 }
